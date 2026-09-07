@@ -1,0 +1,543 @@
+/* ==========================================================================
+   PORTAL DO ALUNO - FACULDADE IMPACTA (IBM CARBON DESIGN SYSTEM MVP THEME)
+   Strictly Zero Border Radius (border-radius: 0px) across all elements.
+   ========================================================================== */
+
+:root {
+    /* Carbon Color Palette */
+    --carbon-bg: #f4f4f4;
+    --carbon-card-bg: #ffffff;
+    --carbon-dark: #161616;
+    --carbon-dark-hover: #262626;
+    --carbon-dark-border: #393939;
+    --carbon-blue: #0f62fe;
+    --carbon-blue-hover: #0353e9;
+    --carbon-blue-active: #002d9c;
+    --carbon-text-primary: #161616;
+    --carbon-text-secondary: #525252;
+    --carbon-text-muted: #8d8d8d;
+    --carbon-text-on-dark: #f4f4f4;
+    --carbon-border: #e0e0e0;
+    --carbon-input-bg: #f4f4f4;
+    --carbon-input-border: #8d8d8d;
+    
+    /* Status Colors */
+    --status-green-bg: #def8ee;
+    --status-green-text: #0e6027;
+    --status-green-border: #24a148;
+    --status-red-bg: #fde8e8;
+    --status-red-text: #da1e28;
+    --status-red-border: #da1e28;
+    --status-gray-bg: #e0e0e0;
+    --status-gray-text: #393939;
+    --status-gray-border: #8d8d8d;
+    
+    /* Typography & Spacing */
+    --font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --header-height: 48px;
+    --sidebar-width: 250px;
+}
+
+/* Global Reset & Box Sizing */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border-radius: 0px !important; /* STRICT REQUIREMENT */
+    font-family: var(--font-family);
+}
+
+body {
+    background-color: var(--carbon-bg);
+    color: var(--carbon-text-primary);
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* App Main Container Layout */
+#app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Auth Layout (Login, Cadastro, Recuperar Senha)
+   -------------------------------------------------------------------------- */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--carbon-bg);
+    padding: 2rem;
+}
+
+.auth-card {
+    background-color: var(--carbon-card-bg);
+    width: 100%;
+    max-width: 440px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border-top: 4px solid var(--carbon-blue);
+}
+
+.auth-header {
+    margin-bottom: 2rem;
+}
+
+.auth-brand {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--carbon-blue);
+    margin-bottom: 0.25rem;
+}
+
+.auth-title {
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--carbon-text-primary);
+}
+
+.auth-subtitle {
+    font-size: 13px;
+    color: var(--carbon-text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   Forms & Carbon Input Fields
+   -------------------------------------------------------------------------- */
+.form-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--carbon-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.carbon-input {
+    width: 100%;
+    height: 40px;
+    background-color: var(--carbon-input-bg);
+    border: none;
+    border-bottom: 1px solid var(--carbon-input-border);
+    padding: 0 1rem;
+    font-size: 14px;
+    color: var(--carbon-text-primary);
+    transition: border-bottom 0.15s ease-in-out;
+}
+
+.carbon-input:focus {
+    outline: none;
+    border-bottom: 2px solid var(--carbon-blue);
+    background-color: #e8e8e8;
+}
+
+.carbon-input::placeholder {
+    color: var(--carbon-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Buttons (IBM Carbon Style)
+   -------------------------------------------------------------------------- */
+.carbon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 1.5rem;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    text-decoration: none;
+}
+
+.carbon-btn-primary {
+    background-color: var(--carbon-blue);
+    color: #ffffff;
+}
+
+.carbon-btn-primary:hover {
+    background-color: var(--carbon-blue-hover);
+}
+
+.carbon-btn-primary:active {
+    background-color: var(--carbon-blue-active);
+}
+
+.carbon-btn-secondary {
+    background-color: #393939;
+    color: #ffffff;
+}
+
+.carbon-btn-secondary:hover {
+    background-color: #4c4c4c;
+}
+
+.carbon-btn-ghost {
+    background-color: transparent;
+    color: var(--carbon-blue);
+    padding: 0;
+    height: auto;
+    font-size: 13px;
+}
+
+.carbon-btn-ghost:hover {
+    text-decoration: underline;
+}
+
+.carbon-btn-block {
+    width: 100%;
+}
+
+.carbon-btn-sm {
+    height: 32px;
+    padding: 0 1rem;
+    font-size: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard Main App Shell (Sidebar + Main Area)
+   -------------------------------------------------------------------------- */
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar Styling */
+.carbon-sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--carbon-dark);
+    color: var(--carbon-text-on-dark);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    height: 64px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-bottom: 1px solid var(--carbon-dark-border);
+}
+
+.sidebar-brand {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: #a8a8a8;
+    text-transform: uppercase;
+}
+
+.sidebar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.sidebar-user {
+    padding: 1.25rem 1.5rem;
+    background-color: #1f1f1f;
+    border-bottom: 1px solid var(--carbon-dark-border);
+}
+
+.sidebar-user-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.sidebar-user-ra {
+    font-size: 11px;
+    color: #a8a8a8;
+}
+
+.sidebar-nav {
+    flex: 1;
+    list-style: none;
+    padding: 1rem 0;
+}
+
+.nav-item {
+    margin: 0;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.85rem 1.5rem;
+    color: #c6c6c6;
+    text-decoration: none;
+    font-size: 14px;
+    border-left: 4px solid transparent;
+    transition: background-color 0.15s ease, color 0.15s ease, border-left-color 0.15s ease;
+}
+
+.nav-link:hover {
+    background-color: var(--carbon-dark-hover);
+    color: #ffffff;
+}
+
+.nav-link.active {
+    background-color: var(--carbon-dark-hover);
+    color: #ffffff;
+    border-left-color: var(--carbon-blue);
+    font-weight: 600;
+}
+
+.sidebar-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--carbon-dark-border);
+}
+
+/* Main Content Area */
+.main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--carbon-bg);
+    overflow-x: hidden;
+}
+
+.carbon-header {
+    height: 64px;
+    background-color: var(--carbon-card-bg);
+    border-bottom: 1px solid var(--carbon-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+}
+
+.header-page-title {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--carbon-text-primary);
+}
+
+.header-status {
+    font-size: 12px;
+    color: var(--carbon-text-secondary);
+}
+
+.content-area {
+    padding: 2rem;
+    flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Carbon Cards & Panels
+   -------------------------------------------------------------------------- */
+.carbon-card {
+    background-color: var(--carbon-card-bg);
+    padding: 1.5rem;
+    border: 1px solid var(--carbon-border);
+    margin-bottom: 1.5rem;
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--carbon-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Grid System */
+.carbon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Status Tags & Badges
+   -------------------------------------------------------------------------- */
+.carbon-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tag-green {
+    background-color: var(--status-green-bg);
+    color: var(--status-green-text);
+    border: 1px solid var(--status-green-border);
+}
+
+.tag-red {
+    background-color: var(--status-red-bg);
+    color: var(--status-red-text);
+    border: 1px solid var(--status-red-border);
+}
+
+.tag-gray {
+    background-color: var(--status-gray-bg);
+    color: var(--status-gray-text);
+    border: 1px solid var(--status-gray-border);
+}
+
+/* --------------------------------------------------------------------------
+   Carbon Data Tables
+   -------------------------------------------------------------------------- */
+.carbon-table-container {
+    width: 100%;
+    overflow-x: auto;
+    background-color: var(--carbon-card-bg);
+    border: 1px solid var(--carbon-border);
+}
+
+.carbon-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.carbon-table th {
+    background-color: #e0e0e0;
+    color: var(--carbon-text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--carbon-border);
+}
+
+.carbon-table td {
+    padding: 1rem;
+    font-size: 13px;
+    color: var(--carbon-text-primary);
+    border-bottom: 1px solid var(--carbon-border);
+}
+
+.carbon-table tbody tr:hover {
+    background-color: #f4f4f4;
+}
+
+/* --------------------------------------------------------------------------
+   Alerts & Modals
+   -------------------------------------------------------------------------- */
+.carbon-alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 13px;
+    border-left: 4px solid var(--carbon-blue);
+    background-color: #e5f0ff;
+    color: #0043ce;
+}
+
+.carbon-alert-error {
+    border-left-color: var(--status-red-border);
+    background-color: var(--status-red-bg);
+    color: var(--status-red-text);
+}
+
+.carbon-alert-success {
+    border-left-color: var(--status-green-border);
+    background-color: var(--status-green-bg);
+    color: var(--status-green-text);
+}
+
+/* Modal Overlay */
+.carbon-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(22, 22, 22, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.carbon-modal {
+    background-color: var(--carbon-card-bg);
+    width: 90%;
+    max-width: 500px;
+    padding: 2rem;
+    border-top: 4px solid var(--carbon-blue);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.modal-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Helpers
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .app-shell {
+        flex-direction: column;
+    }
+    .carbon-sidebar {
+        width: 100%;
+    }
+    .carbon-header {
+        padding: 0 1rem;
+    }
+    .content-area {
+        padding: 1rem;
+    }
+}
+.auth-card a, 
+.auth-card button.carbon-btn-ghost {
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    color: var(--carbon-blue) !important;
+}
+.auth-card a:hover, 
+.auth-card button.carbon-btn-ghost:hover {
+    background-color: transparent !important;
+    text-decoration: underline;
+}
+.modal-header button, 
+button.carbon-modal-close, 
+.carbon-modal-overlay header button {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.modal-header button:hover {
+    background-color: #e0e0e0 !important;
+}
