@@ -14,6 +14,8 @@ import { renderNotasView } from './views/notasView.js';
 import { renderCursosView } from './views/cursosView.js';
 import { renderFinanceiroView } from './views/financeiroView.js';
 import { renderHorariosView } from './views/horariosView.js';
+import { renderDisciplinasView } from './views/disciplinasView.js';
+import { renderTarefasView } from './views/tarefasView.js';
 
 class App {
     constructor() {
@@ -96,6 +98,8 @@ class App {
         // Sidebar Navigation Links Data
         const navItems = [
             { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
+            { id: 'disciplinas', label: 'Disciplinas', icon: '📚' },
+            { id: 'tarefas', label: 'Tarefas e Trabalhos', icon: '📝' },
             { id: 'documentacao', label: 'Documentação', icon: '📁' },
             { id: 'notas', label: 'Notas e Faltas', icon: '📊' },
             { id: 'cursos', label: 'Cursos Extracurriculares', icon: '🎓' },
@@ -105,6 +109,8 @@ class App {
 
         const titles = {
             dashboard: 'Dashboard Inicial',
+            disciplinas: 'Gestão de Disciplinas',
+            tarefas: 'Tarefas e Trabalhos Acadêmicos',
             documentacao: 'Documentos do Aluno',
             notas: 'Boletim de Notas e Faltas',
             cursos: 'Cursos Extracurriculares',
@@ -183,6 +189,12 @@ class App {
 
         let contentElement;
         switch (route) {
+            case 'disciplinas':
+                contentElement = await renderDisciplinasView();
+                break;
+            case 'tarefas':
+                contentElement = await renderTarefasView();
+                break;
             case 'documentacao':
                 contentElement = await renderDocumentacaoView();
                 break;
