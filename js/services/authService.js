@@ -1,133 +1,123 @@
 /**
- * authService.js
- * Service responsible for authentication, registration, password recovery, and session state.
+ * authService.js - Versão integrada com FastAPI e Firebase
  */
 
+const API_URL = "http://localhost:8000";
 const USER_STORAGE_KEY = 'portal_impacta_current_user';
-const USERS_DB_KEY = 'portal_impacta_registered_users';
-
-// Banco inicial padrão caso o localStorage esteja vazio
-const defaultUsers = [
-    {
-        nome: 'Carlos',
-        sobrenome: 'Silva',
-        email: 'aluno@impacta.edu.br',
-        ra: '202400123',
-        senha: '123456',
-        curso: 'Análise e Desenvolvimento de Sistemas',
-        semestre: '3º Semestre - Noturno'
-    }
-];
-
-// Função auxiliar para buscar usuários salvos ou inicializar o banco local
-function getRegisteredUsers() {
-    const stored = localStorage.getItem(USERS_DB_KEY);
-    if (!stored) {
-        localStorage.setItem(USERS_DB_KEY, JSON.stringify(defaultUsers));
-        return defaultUsers;
-    }
-    return JSON.parse(stored);
-}
-
-// Função auxiliar para salvar a lista atualizada de usuários
-function saveRegisteredUsers(users) {
-    localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
-}
 
 export const authService = {
     /**
-     * Validates user credentials.
-     * Accepts either educational Email or RA.
+     * Valida as credenciais do usuário enviando para o Back-end.
      */
     async login(identifier, password) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const cleanIdentifier = identifier.trim().toLowerCase();
-                const registeredUsers = getRegisteredUsers();
-                const user = registeredUsers.find(
-                    u => (u.email.toLowerCase() === cleanIdentifier || u.ra === cleanIdentifier) && u.senha === password
-                );
+        try {
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    identificador: identifier.trim(),
+                    senha: password
+                })
+            });
 
-                if (user) {
-                    const sessionData = {
-                        nome: user.nome,
-                        sobrenome: user.sobrenome,
-                        email: user.email,
-                        ra: user.ra,
-                        curso: user.curso,
-                        semestre: user.semestre
-                    };
-                    // ALTERADO DE localStorage PARA sessionStorage
-                    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(sessionData));
-                    resolve(sessionData);
-                } else {
-                    reject(new Error('Credenciais inválidas. Verifique seu E-mail/RA e Senha.'));
-                }
-            }, 400);
-        });
+            if (!response.ok) {
+                const erroData = await response.json();
+                throw new Error(erroData.detail || 'Credenciais inválidas.');
+            }
+
+            const userData = await response.json();
+            
+            // Salva a sessão no sessionStorage do navegador
+            sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+            
+            // ---> ADICIONA ESTA LINHA: Guarda o RA isolado no localStorage para os serviços filtrakm os dados <---
+            if (userData.ra) {
+                localStorage.setItem('usuarioRA', userData.ra);
+            }
+
+            return userData;
+
+        } catch (error) {
+            console.error("Erro no login:", error);
+            throw error;
+        }
     },
+    
     /**
-     * Registers a new student account and saves it persistently.
+     * Regista um novo aluno no Back-end/Firebase.
      */
-    async cadastro({ nome, sobrenome, email, ra, senha }) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (!nome || !sobrenome || !email || !ra || !senha) {
-                    return reject(new Error('Todos os campos são obrigatórios.'));
-                }
+    async cadastro({ nome, sobrenome, email, ra, senha, curso }) { // <-- Recebe o curso
+        try {
+            if (!nome || !sobrenome || !email || !ra || !senha || !curso) {
+                throw new Error('Todos os campos, incluindo o curso, são obrigatórios.');
+            }
 
-                const registeredUsers = getRegisteredUsers();
-                const existing = registeredUsers.find(u => u.email === email || u.ra === ra);
-                
-                if (existing) {
-                    return reject(new Error('Já existe um cadastro com este E-mail ou RA.'));
-                }
-
-                const newUser = {
+            const response = await fetch(`${API_URL}/usuarios/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
                     nome,
                     sobrenome,
                     email,
                     ra,
                     senha,
-                    curso: 'Engenharia de Software',
+                    curso, // <-- Envia o curso selecionado pelo utilizador
                     semestre: '1º Semestre - Noturno'
-                };
+                })
+            });
 
-                registeredUsers.push(newUser);
-                saveRegisteredUsers(registeredUsers); // Salva no localStorage do navegador
+            if (!response.ok) {
+                const erroData = await response.json();
+                throw new Error(erroData.detail || 'Erro ao realizar cadastro.');
+            }
 
-                resolve({ success: true, message: 'Cadastro realizado com sucesso! Você já pode entrar.' });
-            }, 400);
-        });
+            return await response.json();
+
+        } catch (error) {
+            console.error("Erro no cadastro:", error);
+            throw error;
+        }
     },
 
     /**
-     * Sends password recovery instructions.
+     * Envia instruções de recuperação de senha.
      */
     async recuperarSenha(email) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (!email || !email.includes('@')) {
-                    return reject(new Error('Informe um e-mail válido para recuperação.'));
-                }
-                resolve({ success: true, message: `Instruções de redefinição de senha foram enviadas para ${email}.` });
-            }, 400);
-        });
+        try {
+            const response = await fetch(`${API_URL}/recuperar-senha`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
+
+            if (!response.ok) throw new Error('Erro ao enviar e-mail de recuperação.');
+            return await response.json();
+
+        } catch (error) {
+            console.error("Erro na recuperação:", error);
+            throw error;
+        }
     },
 
     /**
-     * Gets the currently authenticated user from localStorage.
+     * Retorna o usuário logado atualmente a partir do sessionStorage.
      */
     getCurrentUser() {
-        // ALTERADO DE localStorage PARA sessionStorage
         const data = sessionStorage.getItem(USER_STORAGE_KEY);
         return data ? JSON.parse(data) : null;
     },
 
     /**
-     * Logs out current user.
+     * Termina a sessão do usuário.
      */
     logout() {
         sessionStorage.removeItem(USER_STORAGE_KEY);
+        localStorage.removeItem('usuarioRA'); // <--- Limpa também o RA ao sair
     }
 };

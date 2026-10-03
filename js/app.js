@@ -25,6 +25,11 @@ class App {
     }
 
     init() {
+        const fullHash = window.location.hash;
+        if (fullHash.includes('recuperar-senha')) {
+            this.navigateTo('recuperar-senha');
+            return;
+        }
         // Initial route decision
         if (this.user) {
             this.navigateTo('dashboard');

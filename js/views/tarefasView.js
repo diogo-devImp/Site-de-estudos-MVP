@@ -206,7 +206,7 @@ export async function renderTarefasView() {
             // Event Handlers for Action Buttons
             tbody.querySelectorAll('.btn-toggle-task').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const id = Number(e.currentTarget.getAttribute('data-id'));
+                    const id = e.currentTarget.getAttribute('data-id');
                     await tarefasService.toggleStatus(id);
                     loadTarefas();
                 });
@@ -214,7 +214,7 @@ export async function renderTarefasView() {
 
             tbody.querySelectorAll('.btn-edit-task').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const id = Number(e.currentTarget.getAttribute('data-id'));
+                    const id = e.currentTarget.getAttribute('data-id');
                     const taskList = await tarefasService.getTarefas();
                     const task = taskList.find(t => t.id === id);
                     if (task) openModal(task);
@@ -223,7 +223,7 @@ export async function renderTarefasView() {
 
             tbody.querySelectorAll('.btn-delete-task').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const id = Number(e.currentTarget.getAttribute('data-id'));
+                    const id = e.currentTarget.getAttribute('data-id');
                     const titulo = e.currentTarget.getAttribute('data-titulo');
                     if (confirm(`Tem certeza que deseja excluir a tarefa "${titulo}"?`)) {
                         try {

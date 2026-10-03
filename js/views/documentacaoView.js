@@ -52,7 +52,7 @@ export async function renderDocumentacaoView() {
                         <strong style="color: var(--carbon-text-primary);">${doc.nome}</strong>
                     </td>
                     <td>${doc.obrigatorio ? 'Sim' : 'Não (Opcional)'}</td>
-                    <td>${doc.dataEnvio}</td>
+                    <td>${doc.dataEnvio || '-'}</td>
                     <td>
                         <span class="carbon-tag ${tagClass}">${doc.status}</span>
                     </td>
@@ -66,11 +66,38 @@ export async function renderDocumentacaoView() {
             `;
         }).join('');
 
-        // Attachment handler mock
+        // Attachment handler com seletor de ficheiros real
         tbody.querySelectorAll('.btn-upload-doc').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const docName = e.target.getAttribute('data-doc');
-                alert(`[Simulação] Selecione o arquivo PDF/Imagem para enviar: "${docName}".\nO documento será enviado para análise da Secretaria.`);
+
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.pdf, .png, .jpg, .jpeg';
+
+                fileInput.onchange = async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    try {
+                        btn.disabled = true;
+                        btn.textContent = 'Enviando...';
+
+                        await documentacaoService.uploadDocumento(docName, 'Comprovativo', file);
+
+                        alert(`Documento "${docName}" enviado com sucesso!`);
+                        
+                        const newView = await renderDocumentacaoView();
+                        container.replaceWith(newView);
+
+                    } catch (err) {
+                        alert('Erro ao enviar o documento. Tente novamente.');
+                        btn.disabled = false;
+                        btn.textContent = 'Enviar Arquivo';
+                    }
+                };
+
+                fileInput.click();
             });
         });
 

@@ -160,7 +160,7 @@ export async function renderDisciplinasView() {
             // Attach edit/delete event handlers
             tbody.querySelectorAll('.btn-edit-disc').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const id = Number(e.currentTarget.getAttribute('data-id'));
+                    const id = e.currentTarget.getAttribute('data-id');
                     const discList = await disciplinasService.getDisciplinas();
                     const disc = discList.find(d => d.id === id);
                     if (disc) openModal(disc);
@@ -169,7 +169,7 @@ export async function renderDisciplinasView() {
 
             tbody.querySelectorAll('.btn-delete-disc').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const id = Number(e.currentTarget.getAttribute('data-id'));
+                    const id = e.currentTarget.getAttribute('data-id');
                     const nome = e.currentTarget.getAttribute('data-nome');
                     if (confirm(`Tem certeza que deseja excluir a disciplina "${nome}"?`)) {
                         try {

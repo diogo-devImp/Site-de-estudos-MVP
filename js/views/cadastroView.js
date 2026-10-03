@@ -39,6 +39,18 @@ export function renderCadastroView(onNavigate) {
                     <input type="text" id="ra" class="carbon-input" placeholder="ex: 202400999" required />
                 </div>
 
+                <!-- CAMPO DE SELEÇÃO DE CURSO INSERIDO AQUI -->
+                <div class="form-group">
+                    <label class="form-label" for="curso">Curso Acadêmico</label>
+                    <select id="curso" class="carbon-input" required style="width: 100%; height: 40px; background-color: var(--carbon-bg); color: var(--carbon-text-primary);">
+                        <option value="" disabled selected>Selecione o seu curso...</option>
+                        <option value="Ciência da Computação (CC)">Ciência da Computação (CC)</option>
+                        <option value="Sistemas da Informação (SI)">Sistemas da Informação (SI)</option>
+                        <option value="Análise e Desenvolvimento de Sistemas (ADS)">Análise e Desenvolvimento de Sistemas (ADS)</option>
+                        <option value="Engenharia de Software">Engenharia de Software</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label" for="senha">Senha de Acesso</label>
                     <input type="password" id="senha" class="carbon-input" placeholder="Mínimo 6 caracteres" required />
@@ -69,6 +81,7 @@ export function renderCadastroView(onNavigate) {
         const sobrenome = container.querySelector('#sobrenome').value;
         const email = container.querySelector('#email').value;
         const ra = container.querySelector('#ra').value;
+        const curso = container.querySelector('#curso').value; // Captura o curso selecionado
         const senha = container.querySelector('#senha').value;
         const btnSubmit = container.querySelector('#btn-submit-cadastro');
 
@@ -78,9 +91,10 @@ export function renderCadastroView(onNavigate) {
 
         try {
             const { authService } = await import('../services/authService.js');
-            const result = await authService.cadastro({ nome, sobrenome, email, ra, senha });
+            const result = await authService.cadastro({ nome, sobrenome, email, ra, senha, curso });
+            
             alertBox.className = 'carbon-alert carbon-alert-success';
-            alertBox.textContent = result.message;
+            alertBox.textContent = result.message || 'Cadastro realizado com sucesso!';
             alertBox.style.display = 'block';
             setTimeout(() => onNavigate('login'), 1500);
         } catch (err) {
