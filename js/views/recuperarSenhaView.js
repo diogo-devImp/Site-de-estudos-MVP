@@ -3,6 +3,9 @@
  */
 
 export function renderRecuperarSenhaView(onNavigate) {
+    
+    document.body.classList.add('login-page');
+    
     const container = document.createElement('div');
     container.className = 'auth-container';
 
@@ -17,7 +20,7 @@ export function renderRecuperarSenhaView(onNavigate) {
         container.innerHTML = `
             <div class="auth-card">
                 <div class="auth-header">
-                    <div class="auth-brand">Faculdade Impacta</div>
+                    <div class="auth-brand">IHS</div>
                     <h1 class="auth-title">Nova Senha</h1>
                     <p class="auth-subtitle">Defina a sua nova palavra-passe para a conta <strong>${decodeURIComponent(emailParam)}</strong></p>
                 </div>
@@ -88,7 +91,7 @@ export function renderRecuperarSenhaView(onNavigate) {
     container.innerHTML = `
         <div class="auth-card">
             <div class="auth-header">
-                <div class="auth-brand">Faculdade Impacta</div>
+                <div class="auth-brand">IHS</div>
                 <h1 class="auth-title">Recuperação de Senha</h1>
                 <p class="auth-subtitle">Digite seu e-mail cadastrado para receber as instruções</p>
             </div>
@@ -136,7 +139,7 @@ export function renderRecuperarSenhaView(onNavigate) {
             alertBox.innerHTML = `
                 ${res.message}<br><br>
                 <button type="button" id="btn-simular-link" class="carbon-btn carbon-btn-secondary carbon-btn-sm" style="margin-top: 0.5rem; background-color: #ffffff; color: var(--carbon-blue); border: 1px solid var(--carbon-blue);">
-                    🔗 Simular abertura do link recebido no e-mail
+                    🔗 Link de redefinição de senha
                 </button>
             `;
             alertBox.style.display = 'block';

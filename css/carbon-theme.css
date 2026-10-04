@@ -88,11 +88,11 @@ body {
 }
 
 .auth-brand {
-    font-size: 11px;
+    font-size: 22px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--carbon-blue);
+    color: var(--carbon-text-primary);
     margin-bottom: 0.25rem;
 }
 

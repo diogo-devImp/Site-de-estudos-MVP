@@ -7,6 +7,9 @@ import { disciplinasService } from '../services/disciplinasService.js';
 import { horariosService } from '../services/horariosService.js'; // <-- Importa o serviço de horários
 
 export async function renderDashboardView(user, onNavigate) {
+    
+    document.body.classList.remove('login-page');
+    
     const container = document.createElement('div');
     container.className = 'dashboard-view';
 

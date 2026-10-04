@@ -52,16 +52,71 @@ body {
   overflow-x: hidden;
 }
 
+/* O fundo tecnológico aplica-se APENAS quando o body tem a classe login-page E NÃO está no dashboard/sistema */
+/* Configuração global para o corpo quando na página de login/autenticação */
+/* Configuração global para o corpo quando na página de login/autenticação */
 body.login-page {
-  background: linear-gradient(135deg, #0a223d 0%, #1a3a5c 100%);
+  background-image: url('/img/imagem_Fundo.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   width: 100vw;
   margin: 0;
+  background-color: transparent !important;
 }
 
+/* Remove qualquer restrição ou fundo branco do contentor principal (#app) nestes ecrãs */
+body.login-page #app {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Garante que o contentor do cartão flutue isolado e centrado */
+body.login-page .auth-container {
+  width: 100%;
+  max-width: 440px;
+  padding: 1rem;
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* OPÇÃO 3: Branco Suave / Gelo Translúcido */
+body.login-page .auth-card {
+  width: 100%;
+  background: rgba(241, 245, 249, 0.92) !important; /* Branco gelo translúcido */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  padding: 2.5rem;
+  color: #0f172a !important;                    /* Texto escuro legível */
+}
+
+/* Garante que os textos e títulos mantenham a cor escura correta no painel claro */
+body.login-page .auth-card h1,
+body.login-page .auth-card h2,
+body.login-page .auth-card h3,
+body.login-page .auth-card p,
+body.login-page .auth-card label {
+  color: #0f172a !important;
+}
+
+body.login-page .auth-card span {
+  color: #475569 !important;
+}
 a {
   color: var(--secondary-color);
   text-decoration: none;
@@ -1048,6 +1103,11 @@ a:hover {
   color: white;
   font-size: 16px;
   cursor: pointer;
+}
+body.login-page .btn-submit,
+body.login-page button[type="submit"],
+body.login-page .auth-card button {
+  color: var(--carbon-text-primary) !important; 
 }
 
 /* Responsive adjustments */

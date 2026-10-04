@@ -1,4 +1,4 @@
-# Portal do Aluno - Faculdade Impacta (EduTrack AI / Portal Acadêmico)
+# Portal do Aluno - IHS (EduTrack AI / Portal Acadêmico)
 
 Sistema web desenvolvido para o gerenciamento acadêmico de estudantes do ensino superior, focado em controlo de disciplinas, tarefas, notas, frequência, documentação e situação financeira.
 
@@ -16,7 +16,7 @@ Sistema web desenvolvido para o gerenciamento acadêmico de estudantes do ensino
 Armazena as informações cadastrais e credenciais de acesso dos alunos.
 * `nome` (String): Nome próprio do aluno.
 * `sobrenome` (String): Sobrenome do aluno.
-* `email` (String): E-mail institucional (ex: `aluno@impacta.edu.br`).
+* `email` (String): E-mail institucional (ex: `aluno@ihs.edu.br`).
 * `ra` (String): Registro Acadêmico único.
 * `senha` (String): Palavra-passe de acesso.
 * `curso` (String): Curso superior matriculado (ex: *Engenharia de Software*, *Ciência da Computação (CC)*, *Análise e Desenvolvimento de Sistemas (ADS)*, *Sistemas de Informação (SI)*).
@@ -90,4 +90,5 @@ O backend em Python expõe os seguintes endpoints REST principais:
 
 1. **Backend (Python):**
    ```bash
-   uvicorn main:app --reload --port 8000
+   uvicorn main:app --reload 
+   python server.py

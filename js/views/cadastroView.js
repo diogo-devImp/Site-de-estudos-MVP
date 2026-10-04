@@ -4,13 +4,16 @@
  */
 
 export function renderCadastroView(onNavigate) {
+    
+    document.body.classList.add('login-page');
+    
     const container = document.createElement('div');
     container.className = 'auth-container';
 
     container.innerHTML = `
         <div class="auth-card">
             <div class="auth-header">
-                <div class="auth-brand">Faculdade Impacta</div>
+                <div class="auth-brand">IHS</div>
                 <h1 class="auth-title">Novo Cadastro</h1>
                 <p class="auth-subtitle">Crie sua conta para acessar o Portal do Aluno</p>
             </div>

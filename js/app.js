@@ -113,7 +113,7 @@ class App {
         ];
 
         const titles = {
-            dashboard: 'Dashboard Inicial',
+            dashboard: 'Dashboard ',
             disciplinas: 'Gestão de Disciplinas',
             tarefas: 'Tarefas e Trabalhos Acadêmicos',
             documentacao: 'Documentos do Aluno',
@@ -127,7 +127,7 @@ class App {
             <!-- Dark IBM Carbon Sidebar -->
             <aside class="carbon-sidebar">
                 <div class="sidebar-header">
-                    <div class="sidebar-brand">FACULDADE IMPACTA</div>
+                    <div class="sidebar-brand">IHS</div>
                     <div class="sidebar-title">Portal do Aluno</div>
                 </div>
 

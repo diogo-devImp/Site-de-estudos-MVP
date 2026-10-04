@@ -457,4 +457,10 @@ def get_aulas_por_curso(curso: str):
   return listar_documentos("aulas_hoje")
 
 os.makedirs("uploads", exist_ok=True)
+os.makedirs("img", exist_ok=True)
+os.makedirs("css", exist_ok=True)
+
+# Expõe as pastas para o servidor conseguir servi-las ao front-end
+app.mount("/img", StaticFiles(directory="img"), name="img")
+app.mount("/css", StaticFiles(directory="css"), name="css")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
