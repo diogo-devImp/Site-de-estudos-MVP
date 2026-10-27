@@ -1,32 +1,35 @@
 schema: spec-driven
 
-# Project context (optional)
-# Add only constraints that should guide OpenSpec artifacts and workflows.
-# Include constraints an agent cannot infer by reading the code.
-# Keep general project documentation and discoverable codebase facts out.
-# Example:
-#   context: |
-#     Designs and tasks must cover Windows, macOS, and Linux
-#     Write all artifacts in Spanish
+# Contexto lido pela IA ao criar proposals, specs, designs e tasks.
+context: |
+  Projeto: EduTrack AI / Portal do Aluno — app web para estudantes acompanharem disciplinas,
+  tarefas e progresso acadêmico, com métricas calculadas em Python. Projeto de curso de
+  Spec-Driven Development (OpenSpec): o aluno escreve a proposta, a IA implementa, o aluno valida.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Stack: backend Python 3 + FastAPI + Uvicorn, JWT (PyJWT), Cloud Firestore (firebase-admin);
+  frontend em JavaScript Vanilla (ES modules), IBM Carbon Design System e Chart.js.
+  Fora do escopo por enquanto: Xano e FlutterFlow (mencionados na especificação de negócio).
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Convenções:
+  - Lógica de negócio em funções puras (metrics.py, filters.py, utils.py), sem importar Firestore
+    nem FastAPI; main.py só orquestra I/O e HTTP. Sem lógica de negócio nova no JS.
+  - Campos de domínio em camelCase no Firestore (disciplinaId, dataPrevista, dataConclusao);
+    parâmetros de query em snake_case (data_inicio). Datas sempre AAAA-MM-DD.
+  - Status de tarefa: Pendente | Concluída.
+  - Rotas de disciplinas, tarefas e métricas exigem JWT; o RA vem do token e um aluno nunca acessa
+    dados de outro RA (HTTP 403).
+  - Testes com unittest: python -m unittest discover -s tests -t .
+  - Respostas de API < 2 s; escalável para 1000+ usuários.
+
+# Regras por artefato.
+rules:
+  proposal:
+    - Escrever em português; manter em inglês apenas as palavras-chave do formato (Why, What Changes, Impact).
+    - Informar se a mudança é breaking e quais arquivos e dados são afetados.
+  specs:
+    - Escrever em português; manter em inglês os cabeçalhos do formato (ADDED Requirements, Requirement, Scenario, WHEN, THEN, AND).
+    - Todo requisito usa SHALL ou MUST e tem pelo menos um cenário.
+  design:
+    - Registrar as alternativas descartadas e as questões em aberto.
+  tasks:
+    - Incluir um teste automatizado para cada cenário das specs e marcar como pendente o que não foi verificado de fato.

@@ -7,6 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models import Aviso, AulaHoje, Disciplina, FrequenciaAluno, Tarefa
+from filters import FiltroInvalido, filtrar_disciplinas, filtrar_tarefas
+from metrics import aplicar_data_conclusao, calcular_metricas
 from pydantic import BaseModel
 from typing import Optional
 import firebase_admin
@@ -281,14 +283,25 @@ def post_disciplina(d: dict, usuario: dict = Depends(verificar_token)):
 
 
 @app.get("/disciplinas/{ra_aluno}")
-def get_disciplinas_aluno(ra_aluno: str, usuario: dict = Depends(verificar_token)):
+def get_disciplinas_aluno(
+    ra_aluno: str,
+    q: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    usuario: dict = Depends(verificar_token),
+):
   exigir_mesmo_usuario(ra_aluno, usuario)
   try:
     # Filtra estritamente pelo RA do aluno logado no Firestore
     docs = db.collection("disciplinas").where("ra_aluno", "==", ra_aluno).stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+    disciplinas = [{"id": doc.id, **doc.to_dict()} for doc in docs]
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
+  try:
+    # Busca/filtros opcionais (ver openspec: add-task-subject-search-filters)
+    return filtrar_disciplinas(disciplinas, q=q, data_inicio=data_inicio, data_fim=data_fim)
+  except FiltroInvalido as e:
+    raise HTTPException(status_code=422, detail=str(e))
 
 @app.put("/disciplinas/{id}")
 def update_disciplina(id: str, d: dict, usuario: dict = Depends(verificar_token)):
@@ -321,17 +334,34 @@ def delete_disciplina(id: str, usuario: dict = Depends(verificar_token)):
 @app.post("/tarefas/", status_code=201)
 def post_tarefa(t: dict, usuario: dict = Depends(verificar_token)):
   t["ra_aluno"] = usuario["ra"]
+  t = aplicar_data_conclusao(t, None)
   return criar_documento("tarefas", t)
 
 
 @app.get("/tarefas/{ra_aluno}")
-def get_tarefas_aluno(ra_aluno: str, usuario: dict = Depends(verificar_token)):
+def get_tarefas_aluno(
+    ra_aluno: str,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
+    disciplina_id: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    usuario: dict = Depends(verificar_token),
+):
   exigir_mesmo_usuario(ra_aluno, usuario)
   try:
     docs = db.collection("tarefas").where("ra_aluno", "==", ra_aluno).stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+    tarefas = [{"id": doc.id, **doc.to_dict()} for doc in docs]
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
+  try:
+    # Busca/filtros opcionais (ver openspec: add-task-subject-search-filters)
+    return filtrar_tarefas(
+        tarefas, q=q, status=status, disciplina_id=disciplina_id,
+        data_inicio=data_inicio, data_fim=data_fim,
+    )
+  except FiltroInvalido as e:
+    raise HTTPException(status_code=422, detail=str(e))
 
 @app.put("/tarefas/{id}")
 def update_tarefa(id: str, t: Tarefa, usuario: dict = Depends(verificar_token)):
@@ -340,12 +370,16 @@ def update_tarefa(id: str, t: Tarefa, usuario: dict = Depends(verificar_token)):
     snap = doc_ref.get()
     if not snap.exists:
       raise HTTPException(status_code=404, detail="Tarefa não encontrada")
-    if str(snap.to_dict().get("ra_aluno")) != str(usuario.get("ra")):
+    anterior = snap.to_dict()
+    if str(anterior.get("ra_aluno")) != str(usuario.get("ra")):
       raise HTTPException(status_code=403, detail="Acesso negado para esta tarefa.")
     dados = t.model_dump()
     dados["ra_aluno"] = usuario["ra"]
+    dados = aplicar_data_conclusao(dados, anterior)
     doc_ref.set(dados, merge=True)
     return {"id": id, **dados}
+  except HTTPException:
+    raise
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
 
@@ -545,119 +579,19 @@ def get_aulas_por_curso(curso: str):
 
 
 # --- ROTA DE MÉTRICAS AVANÇADAS ---
+# A lógica de cálculo vive em metrics.py (funções puras, com testes em tests/).
 @app.get("/metricas/{ra_aluno}")
 def get_metricas(ra_aluno: str, usuario: dict = Depends(verificar_token)):
-    """Calcula métricas avançadas de progresso ponderado por carga horária."""
+    """Progresso ponderado por carga horária, previsão de conclusão e alertas."""
     exigir_mesmo_usuario(ra_aluno, usuario)
     try:
-        # 1. Busca disciplinas e tarefas do aluno
         disc_docs = db.collection("disciplinas").where("ra_aluno", "==", ra_aluno).stream()
         disciplinas = [{"id": doc.id, **doc.to_dict()} for doc in disc_docs]
 
         tarefa_docs = db.collection("tarefas").where("ra_aluno", "==", ra_aluno).stream()
         tarefas = [{"id": doc.id, **doc.to_dict()} for doc in tarefa_docs]
 
-        if not disciplinas:
-            return {
-                "ra_aluno": ra_aluno,
-                "progresso_global": 0,
-                "progresso_por_disciplina": [],
-                "resumo_tarefas": {"total": 0, "concluidas": 0, "pendentes": 0},
-                "alertas": []
-            }
-
-        # 2. Para cada disciplina: calcula progresso (% tarefas concluídas) e peso por carga horária
-        def extrair_horas(ch_str: str) -> int:
-            """Extrai número inteiro de strings como '80 horas', '60h', etc."""
-            import re
-            nums = re.findall(r'\d+', str(ch_str))
-            return int(nums[0]) if nums else 60  # default 60h
-
-        total_horas = 0
-        progresso_ponderado_sum = 0
-        progresso_por_disciplina = []
-        alertas = []
-        hoje = datetime.now().date()
-
-        for disc in disciplinas:
-            disc_id = disc["id"]
-            disc_nome = disc.get("nome", "Sem nome")
-            carga_str = disc.get("cargaHoraria", "60 horas")
-            horas = extrair_horas(carga_str)
-
-            # Tarefas desta disciplina
-            tarefas_disc = [t for t in tarefas if t.get("disciplinaId") == disc_id]
-            total_disc = len(tarefas_disc)
-            concluidas_disc = len([t for t in tarefas_disc if t.get("status") == "Concluída"])
-            progresso_pct = round((concluidas_disc / total_disc * 100), 1) if total_disc > 0 else 0
-
-            # Tarefas atrasadas (pendentes com dataPrevista < hoje)
-            atrasadas = []
-            for t in tarefas_disc:
-                if t.get("status") == "Pendente" and t.get("dataPrevista"):
-                    try:
-                        data_t = datetime.strptime(t["dataPrevista"], "%Y-%m-%d").date()
-                        dias_atraso = (hoje - data_t).days
-                        if dias_atraso > 0:
-                            atrasadas.append({
-                                "titulo": t.get("titulo", ""),
-                                "dias_atraso": dias_atraso
-                            })
-                            alertas.append({
-                                "tipo": "atraso",
-                                "disciplina": disc_nome,
-                                "tarefa": t.get("titulo", ""),
-                                "dias_atraso": dias_atraso,
-                                "mensagem": f"'{t.get('titulo', '')}' em {disc_nome} está {dias_atraso} dia(s) atrasada."
-                            })
-                    except:
-                        pass
-
-            # Previsão de conclusão
-            pendentes_disc = total_disc - concluidas_disc
-            previsao_msg = "Sem tarefas cadastradas"
-            if total_disc > 0:
-                if pendentes_disc == 0:
-                    previsao_msg = "✅ Todas as tarefas concluídas"
-                else:
-                    previsao_msg = f"{pendentes_disc} tarefa(s) pendente(s)"
-
-            total_horas += horas
-            progresso_ponderado_sum += progresso_pct * horas
-
-            progresso_por_disciplina.append({
-                "id": disc_id,
-                "nome": disc_nome,
-                "cargaHoraria": carga_str,
-                "horas": horas,
-                "total_tarefas": total_disc,
-                "concluidas": concluidas_disc,
-                "pendentes": pendentes_disc,
-                "progresso_pct": progresso_pct,
-                "tarefas_atrasadas": len(atrasadas),
-                "previsao": previsao_msg
-            })
-
-        # 3. Progresso global ponderado por carga horária
-        progresso_global = round(progresso_ponderado_sum / total_horas, 1) if total_horas > 0 else 0
-
-        # 4. Resumo geral
-        total_tarefas = len(tarefas)
-        concluidas_total = len([t for t in tarefas if t.get("status") == "Concluída"])
-        pendentes_total = total_tarefas - concluidas_total
-
-        return {
-            "ra_aluno": ra_aluno,
-            "progresso_global": progresso_global,
-            "progresso_por_disciplina": progresso_por_disciplina,
-            "resumo_tarefas": {
-                "total": total_tarefas,
-                "concluidas": concluidas_total,
-                "pendentes": pendentes_total
-            },
-            "alertas": alertas[:10]  # máximo 10 alertas
-        }
-
+        return calcular_metricas(ra_aluno, disciplinas, tarefas)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

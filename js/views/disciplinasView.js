@@ -5,6 +5,7 @@
 
 import { disciplinasService } from '../services/disciplinasService.js';
 import { tarefasService } from '../services/tarefasService.js';
+import { metricasService } from '../services/metricasService.js';
 
 export async function renderDisciplinasView() {
     const container = document.createElement('div');
@@ -159,6 +160,7 @@ export async function renderDisciplinasView() {
     let allDisciplinas = [];
     let allTarefas = [];
     let pizzaChart = null;
+    let metricasPorDisc = {}; // disciplinaId -> métricas calculadas no backend (previsão etc.)
 
     // Mapa de progresso: disciplinaId -> { total, concluidas, pct }
     const calcularProgresso = (disciplinaId) => {
@@ -246,6 +248,12 @@ export async function renderDisciplinasView() {
                 ? `${concluidas}/${total} tarefas`
                 : 'Sem tarefas';
 
+            // Previsão de conclusão calculada pelo backend (se disponível)
+            const metrica = metricasPorDisc[item.id];
+            const previsaoHtml = (total > 0 && metrica && metrica.previsao)
+                ? `<div style="font-size: 11px; margin-top: 2px; color: ${metrica.dentro_do_prazo === false ? 'var(--status-red-text)' : 'var(--carbon-text-muted)'};">${escapeHtml(metrica.previsao)}</div>`
+                : '';
+
             return `
                 <tr>
                     <td>
@@ -258,6 +266,7 @@ export async function renderDisciplinasView() {
                     <td>
                         ${progressoBar(pct)}
                         <div style="font-size: 11px; color: var(--carbon-text-muted); margin-top: 3px;">${progressoLabel}</div>
+                        ${previsaoHtml}
                     </td>
                     <td style="text-align: right;">
                         <div style="display: inline-flex; gap: 0.25rem;">
@@ -298,10 +307,15 @@ export async function renderDisciplinasView() {
     // Load all data from API
     const loadDisciplinas = async () => {
         try {
-            [allDisciplinas, allTarefas] = await Promise.all([
+            let metricas = null;
+            [allDisciplinas, allTarefas, metricas] = await Promise.all([
                 disciplinasService.getDisciplinas(),
-                tarefasService.getTarefas()
+                tarefasService.getTarefas(),
+                metricasService.getMetricas().catch(() => null) // previsão é opcional: não bloqueia a tela
             ]);
+            metricasPorDisc = Object.fromEntries(
+                ((metricas && metricas.progresso_por_disciplina) || []).map(d => [d.id, d])
+            );
             renderSumario();
             applySearch();
         } catch (err) {

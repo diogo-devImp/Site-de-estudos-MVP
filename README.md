@@ -43,6 +43,7 @@ Atividades e trabalhos associados às disciplinas.
 * `descricao` (String): Detalhes da entrega.
 * `dataPrevista` (String): Data limite de entrega.
 * `status` (String): Estado atual (`Pendente` ou `Concluída`).
+* `dataConclusao` (String, opcional): `AAAA-MM-DD`, definida **pelo servidor** ao concluir a tarefa e removida ao reabri-la. Base do cálculo de velocidade e previsão. Tarefas concluídas antes deste campo existir ficam sem data.
 
 ### 4. Notas e Faltas (`notas`)
 Controlo de desempenho por avaliações.
@@ -68,15 +69,18 @@ O backend em Python expõe os seguintes endpoints REST principais:
 
 * **Disciplinas (CRUD Completo):**
   * `POST /disciplinas/` — Cria uma nova disciplina vinculada ao RA do aluno.
-  * `GET /disciplinas/{ra_aluno}` — Lista todas as disciplinas do aluno logado.
+  * `GET /disciplinas/{ra_aluno}` — Lista todas as disciplinas do aluno logado. Filtros opcionais: `q` (nome/professor/descrição, sem distinção de acentos), `data_inicio`, `data_fim` (`AAAA-MM-DD`; disciplinas vigentes no período).
   * `PUT /disciplinas/{id}` — Atualiza os dados de uma disciplina.
   * `DELETE /disciplinas/{id}` — Remove uma disciplina.
 
 * **Tarefas (CRUD Completo):**
   * `POST /tarefas/` — Regista uma nova tarefa.
-  * `GET /tarefas/{ra_aluno}` — Lista as tarefas do aluno.
+  * `GET /tarefas/{ra_aluno}` — Lista as tarefas do aluno. Filtros opcionais (combinados com E): `q` (título/descrição), `status` (`Pendente`, `Concluída` ou `todos`), `disciplina_id`, `data_inicio`, `data_fim` (sobre `dataPrevista`). Parâmetros inválidos retornam `422`.
   * `PUT /tarefas/{id}` — Atualiza uma tarefa ou o seu status.
   * `DELETE /tarefas/{id}` — Remove uma tarefa.
+
+* **Métricas (Python, `metrics.py`):**
+  * `GET /metricas/{ra_aluno}` — Progresso global ponderado por carga horária, progresso por disciplina, previsão de conclusão (ritmo dos últimos 14 dias), alertas de atraso e de risco de prazo.
 
 * **Documentação & Notas:**
   * `GET /documentos/{ra_aluno}` — Retorna o status da entrega de documentos obrigatórios.
@@ -102,3 +106,35 @@ pip install -r requirements.txt
 ```
 
 O backend utiliza JWT para proteger as rotas de disciplinas, tarefas e métricas. O token é enviado pelo frontend no header `Authorization: Bearer <token>`.
+
+---
+
+## 🧪 Testes
+
+A lógica de negócio em Python (`metrics.py`, `filters.py`, `utils.py`) não depende do Firestore e é testada com a biblioteca padrão:
+
+```bash
+python -m unittest discover -s tests -t . -v
+```
+
+---
+
+## 📐 OpenSpec (Spec-Driven Development)
+
+A documentação viva do sistema fica em `openspec/`:
+
+* `openspec/specs/` — **o que o sistema faz hoje** (uma pasta por capacidade, com requisitos e cenários).
+* `openspec/changes/` — mudanças em andamento (`proposal.md`, `design.md`, `tasks.md` e deltas em `specs/`).
+* `openspec/changes/archive/` — histórico das mudanças já concluídas (`AAAA-MM-DD-<id>`).
+* `openspec/config.yaml` — contexto e regras que guiam a IA ao criar novas propostas.
+
+Fluxo: propor → implementar → validar → arquivar (`openspec archive <id>`, que aplica os deltas em `specs/`).
+
+| Capacidade (`specs/`) | Feature da especificação | Change arquivada |
+|---|---|---|
+| `progress-metrics` | 5. Cálculo avançado de progresso | `2026-10-25-add-advanced-progress-forecast` |
+| `search-filters` | 6. Busca e filtros avançados | `2026-10-25-add-task-subject-search-filters` |
+
+Pendente de verificação manual (itens `[ ]` nos `tasks.md` arquivados): testar os fluxos no `/docs` e no navegador e rodar `openspec validate --specs --strict` com o CLI oficial.
+
+Próximas changes previstas: tempo estimado/real nas tarefas, insights com IA, relatório semanal em PDF e alertas de prazo próximo.
