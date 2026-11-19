@@ -97,7 +97,7 @@ O backend em Python expõe os seguintes endpoints REST principais:
    ```bash
    uvicorn main:app --reload 
    python server.py
-   http://127.0.0.1:8000/docs
+   http://127.0.0.1:8000/docs  
    
 
 ### Dependências do backend
