@@ -1,8 +1,9 @@
 # Instruções para Agentes de IA EduTrack AI
+
 ## Perfil do Projeto
 Este é o projeto **EduTrack AI**, um app de gestão acadêmica.
-**Frontend:** FlutterFlow
-**Backend:** Xano (via XanoScript)
+**Frontend:** Web / App do projeto
+**Backend:** Firebase (Firestore / Auth)
 **Metodologia:** Spec-Driven Development (OpenSpec)
 **IA Assistente:** Gemini Code Assist (Google Cloud)
 
@@ -13,8 +14,8 @@ Este é o projeto **EduTrack AI**, um app de gestão acadêmica.
 3. **Proposals OpenSpec:** Use `kebab-case` (ex: `add-subjects-table`).
 
 ### Conhecimento do Schema
-1. **Tabela Existente:** A tabela de autenticação padrão (`user` ou `users`) já existe no Xano.
-2. **Relacionamentos:** Sempre use `user_id` para vincular dados ao usuário logado.
+1. **Coleção / Autenticação Existente:** A estrutura de autenticação e usuários já existe no Firebase (`usuarios` / Auth).
+2. **Relacionamentos:** Sempre use `user_id` para vincular dados ao usuário autenticado.
 
 ### Regras de Segurança
 1. Toda query ao banco DEVE filtrar por `user_id` do usuário autenticado.
@@ -39,8 +40,7 @@ Adicione tarefas extras SOMENTE se explicitamente solicitado.
 
 ### Responsabilidade da IA
 **SUA TAREFA TERMINA NA GERAÇÃO DOS ARQUIVOS.**
-- Criar/editar arquivos (`.xs`, `specs/spec.md`, `tasks.md`)
+- Criar/editar arquivos (`specs/spec.md`, `tasks.md`)
 - Marcar tasks completas em `tasks.md`
-- NÃO tente fazer push, sync ou deploy para Xano
-- NÃO procure ou invoque ferramentas `push_all_changes_to_xano`
+- NÃO tente fazer push, sync ou deploy externo automático sem revisão
 **O desenvolvedor é responsável por revisar e fazer push manualmente.**
