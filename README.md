@@ -5,8 +5,9 @@ Sistema web desenvolvido para o gerenciamento acadêmico de estudantes do ensino
 ## 🚀 Tecnologias Utilizadas
 * **Frontend:** JavaScript Vanilla (ES6+), Arquitetura baseada em Views modulares, IBM Carbon Design System.
 * **Backend:** Python (FastAPI), Uvicorn.
-* **Base de Dados:** Cloud Firestore (Google Firebase).
+* **Base de Dados / Backend Cloud:** Cloud Firestore (Google Firebase).
 * **Controlo de Versão:** Git & GitHub.
+* **Ambiente e Ferramentas de Desenvolvimento:** VS Code, Node.js, OpenSpec.
 
 ---
 
