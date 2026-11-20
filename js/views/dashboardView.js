@@ -6,6 +6,7 @@ import { notasService } from '../services/notasService.js';
 import { disciplinasService } from '../services/disciplinasService.js';
 import { horariosService } from '../services/horariosService.js'; // <-- Importa o serviço de horários
 import { metricasService } from '../services/metricasService.js'; // <-- Progresso calculado no backend Python
+import { relatoriosService } from '../services/relatoriosService.js'; // <-- Relatório PDF gerado no backend Python
 
 export async function renderDashboardView(user, onNavigate) {
     
@@ -106,6 +107,11 @@ export async function renderDashboardView(user, onNavigate) {
                 <div id="dashboard-progresso">
                     <div style="font-size: 13px; color: var(--carbon-text-secondary); text-align: center; padding: 1.5rem;">Carregando progresso...</div>
                 </div>
+
+                <button type="button" id="btn-baixar-relatorio" class="carbon-btn carbon-btn-secondary carbon-btn-block" style="margin-top: 1rem; height: 38px;">
+                    📄 Baixar relatório em PDF
+                </button>
+                <div id="relatorio-status" style="font-size: 12px; color: var(--carbon-text-secondary); margin-top: 0.5rem; text-align: center;" aria-live="polite"></div>
             </div>
         </div>
     `;
@@ -249,6 +255,22 @@ export async function renderDashboardView(user, onNavigate) {
     // Event listeners
     container.querySelector('#btn-ver-notas').addEventListener('click', () => onNavigate('notas'));
     container.querySelector('#btn-ver-horarios').addEventListener('click', () => onNavigate('horarios'));
+
+    const btnRelatorio = container.querySelector('#btn-baixar-relatorio');
+    const statusRelatorio = container.querySelector('#relatorio-status');
+    btnRelatorio.addEventListener('click', async () => {
+        btnRelatorio.disabled = true;
+        statusRelatorio.textContent = 'Gerando relatório...';
+        try {
+            const arquivo = await relatoriosService.gerarEBaixar();
+            statusRelatorio.textContent = `Relatório baixado: ${arquivo}`;
+        } catch (error) {
+            console.error('Erro ao gerar relatório:', error);
+            statusRelatorio.textContent = error.message || 'Não foi possível gerar o relatório.';
+        } finally {
+            btnRelatorio.disabled = false;
+        }
+    });
 
     return container;
 }

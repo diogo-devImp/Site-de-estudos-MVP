@@ -13,5 +13,5 @@
 - [x] 3.1 Documentar os parâmetros no README
 
 ## 4. Fechamento
-- [ ] 4.1 `openspec validate add-task-subject-search-filters --strict` (CLI oficial; estrutura já checada por script equivalente)
-- [x] 4.2 Arquivar a change (feito manualmente em 2026-10-25, seguindo o fluxo do `openspec archive`)
+- [ ] 4.1 `openspec validate add-task-subject-search-filters --strict`
+- [ ] 4.2 `openspec archive add-task-subject-search-filters --yes`

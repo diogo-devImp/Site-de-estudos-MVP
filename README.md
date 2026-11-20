@@ -5,9 +5,8 @@ Sistema web desenvolvido para o gerenciamento acadêmico de estudantes do ensino
 ## 🚀 Tecnologias Utilizadas
 * **Frontend:** JavaScript Vanilla (ES6+), Arquitetura baseada em Views modulares, IBM Carbon Design System.
 * **Backend:** Python (FastAPI), Uvicorn.
-* **Base de Dados / Backend Cloud:** Cloud Firestore (Google Firebase).
+* **Base de Dados:** Cloud Firestore (Google Firebase).
 * **Controlo de Versão:** Git & GitHub.
-* **Ambiente e Ferramentas de Desenvolvimento:** VS Code, Node.js, OpenSpec.
 
 ---
 
@@ -72,16 +71,23 @@ O backend em Python expõe os seguintes endpoints REST principais:
   * `POST /disciplinas/` — Cria uma nova disciplina vinculada ao RA do aluno.
   * `GET /disciplinas/{ra_aluno}` — Lista todas as disciplinas do aluno logado. Filtros opcionais: `q` (nome/professor/descrição, sem distinção de acentos), `data_inicio`, `data_fim` (`AAAA-MM-DD`; disciplinas vigentes no período).
   * `PUT /disciplinas/{id}` — Atualiza os dados de uma disciplina.
+  * `PATCH /disciplinas/{id}` — Atualização parcial: só os campos enviados são alterados. Exige que a disciplina seja do aluno do token (`403`/`404` caso contrário).
+  * `GET /disciplinas/{ra_aluno}/busca` — Busca híbrida: disciplinas cujo **nome** casa com `q` **OU** (com `atrasadas=true`) que têm tarefas pendentes atrasadas. Cada item traz `tarefas_atrasadas`, `motivos` e `relevancia`.
   * `DELETE /disciplinas/{id}` — Remove uma disciplina.
 
 * **Tarefas (CRUD Completo):**
   * `POST /tarefas/` — Regista uma nova tarefa.
   * `GET /tarefas/{ra_aluno}` — Lista as tarefas do aluno. Filtros opcionais (combinados com E): `q` (título/descrição), `status` (`Pendente`, `Concluída` ou `todos`), `disciplina_id`, `data_inicio`, `data_fim` (sobre `dataPrevista`). Parâmetros inválidos retornam `422`.
   * `PUT /tarefas/{id}` — Atualiza uma tarefa ou o seu status.
+  * `PATCH /tarefas/{id}` — Atualização parcial (ex.: só `status`). `dataConclusao` continua sendo definida pelo servidor.
   * `DELETE /tarefas/{id}` — Remove uma tarefa.
 
 * **Métricas (Python, `metrics.py`):**
   * `GET /metricas/{ra_aluno}` — Progresso global ponderado por carga horária, progresso por disciplina, previsão de conclusão (ritmo dos últimos 14 dias), alertas de atraso e de risco de prazo.
+
+* **Relatório em PDF (Python, `reports.py` + `reportlab`):**
+  * `POST /relatorios/{ra_aluno}/gerar` — Gera o PDF de progresso e devolve `arquivo` e `download_url`.
+  * `GET /relatorios/{ra_aluno}/download/{arquivo}` — Baixa o PDF (`Content-Disposition: attachment`). Exige o JWT do próprio aluno.
 
 * **Documentação & Notas:**
   * `GET /documentos/{ra_aluno}` — Retorna o status da entrega de documentos obrigatórios.
@@ -97,7 +103,7 @@ O backend em Python expõe os seguintes endpoints REST principais:
    ```bash
    uvicorn main:app --reload 
    python server.py
-   http://127.0.0.1:8000/docs  
+   http://127.0.0.1:8000/docs
    
 
 ### Dependências do backend
@@ -107,6 +113,17 @@ pip install -r requirements.txt
 ```
 
 O backend utiliza JWT para proteger as rotas de disciplinas, tarefas e métricas. O token é enviado pelo frontend no header `Authorization: Bearer <token>`.
+
+---
+
+### Script de progresso
+
+```bash
+python scripts/calculate_progress.py --completed 3 --total 4
+# {"percentage": 75.0, "completed": 3, "total": 4}
+```
+
+Com `total = 0` devolve `percentage: 0` (sem divisão por zero). Entrada inválida devolve `{"error": ...}` e código de saída 1.
 
 ---
 
@@ -122,20 +139,19 @@ python -m unittest discover -s tests -t . -v
 
 ## 📐 OpenSpec (Spec-Driven Development)
 
-A documentação viva do sistema fica em `openspec/`:
+As mudanças são propostas em `openspec/changes/<id>/` (`proposal.md`, `design.md`, `tasks.md` e `specs/`), implementadas e então arquivadas com `openspec archive`, o que atualiza `openspec/specs/`.
 
-* `openspec/specs/` — **o que o sistema faz hoje** (uma pasta por capacidade, com requisitos e cenários).
-* `openspec/changes/` — mudanças em andamento (`proposal.md`, `design.md`, `tasks.md` e deltas em `specs/`).
-* `openspec/changes/archive/` — histórico das mudanças já concluídas (`AAAA-MM-DD-<id>`).
-* `openspec/config.yaml` — contexto e regras que guiam a IA ao criar novas propostas.
-
-Fluxo: propor → implementar → validar → arquivar (`openspec archive <id>`, que aplica os deltas em `specs/`).
-
-| Capacidade (`specs/`) | Feature da especificação | Change arquivada |
+| Change | Feature da especificação | Status |
 |---|---|---|
-| `progress-metrics` | 5. Cálculo avançado de progresso | `2026-10-25-add-advanced-progress-forecast` |
-| `search-filters` | 6. Busca e filtros avançados | `2026-10-25-add-task-subject-search-filters` |
+| `add-advanced-progress-forecast` | 5. Cálculo avançado de progresso | implementada (falta validação manual e arquivamento) |
+| `add-task-subject-search-filters` | 6. Busca e filtros avançados | implementada (falta validação manual e arquivamento) |
 
-Pendente de verificação manual (itens `[ ]` nos `tasks.md` arquivados): testar os fluxos no `/docs` e no navegador e rodar `openspec validate --specs --strict` com o CLI oficial.
+| `add-progress-calculation-script` | Tarefa 12: script `calculate_progress.py` | implementada (falta validar e arquivar) |
+| `add-partial-update-endpoints` | Tarefa 13: PATCH de disciplinas e tarefas | implementada (falta validar e arquivar) |
+| `add-hybrid-subject-search` | Tarefa 14: busca híbrida (nome OU atrasadas) | implementada (falta validar e arquivar) |
+| `add-pdf-progress-report` | Tarefa 15: relatório de progresso em PDF | implementada (falta validar e arquivar) |
+| `add-bottom-navbar-and-assets` | Tarefa 09: NavBar inferior e `assets/icons/` | implementada (falta validar e arquivar) |
 
-Próximas changes previstas: tempo estimado/real nas tarefas, insights com IA, relatório semanal em PDF e alertas de prazo próximo.
+Regras para os agentes de IA (escopo, segurança, formato do OpenSpec): ver `AGENTS.md`.
+
+Próximas changes previstas: tempo estimado/real nas tarefas, insights com IA e alertas de prazo próximo.

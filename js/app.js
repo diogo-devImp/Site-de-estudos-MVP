@@ -112,6 +112,13 @@ class App {
             { id: 'horarios', label: 'Horários e Grade', icon: '🗓️' },
         ];
 
+        // Itens da NavBar inferior (ícones em assets/icons/)
+        const bottomNavItems = [
+            { id: 'dashboard', label: 'Home', icon: 'home.svg' },
+            { id: 'disciplinas', label: 'Disciplinas', icon: 'subjects.svg' },
+            { id: 'tarefas', label: 'Tarefas', icon: 'tasks.svg' },
+        ];
+
         const titles = {
             dashboard: 'Dashboard ',
             disciplinas: 'Gestão de Disciplinas',
@@ -168,10 +175,20 @@ class App {
                     <div style="padding: 2rem; text-align: center;">Carregando view...</div>
                 </main>
             </div>
+
+            <!-- Bottom NavBar (visível só em telas pequenas): Home, Disciplinas e Tarefas -->
+            <nav class="bottom-navbar" aria-label="Navegação principal">
+                ${bottomNavItems.map(item => `
+                    <a href="#" class="bottom-nav-link ${route === item.id ? 'active' : ''}" data-route="${item.id}">
+                        <img src="./assets/icons/${item.icon}" alt="" class="bottom-nav-icon" width="24" height="24">
+                        <span>${item.label}</span>
+                    </a>
+                `).join('')}
+            </nav>
         `;
 
         // Bind navigation clicks
-        shell.querySelectorAll('.nav-link').forEach(link => {
+        shell.querySelectorAll('.nav-link, .bottom-nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetRoute = e.currentTarget.getAttribute('data-route');
