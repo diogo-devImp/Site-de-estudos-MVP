@@ -16,8 +16,8 @@
 ## 4. Frontend
 - [x] 4.1 Card "Progresso Acadêmico" no dashboard consumindo `/metricas`
 - [x] 4.2 Previsão por disciplina na tela de Disciplinas (falha de `/metricas` não bloqueia a tela)
-- [ ] 4.3 Verificar visualmente no navegador (card do dashboard e previsão em Disciplinas)
+- [ ] 4.3 Verificar visualmente em tema claro/escuro
 
 ## 5. Fechamento
-- [ ] 5.1 `openspec validate add-advanced-progress-forecast --strict` (CLI oficial; estrutura já checada por script equivalente)
-- [x] 5.2 Arquivar a change (feito manualmente em 2026-10-25, seguindo o fluxo do `openspec archive`)
+- [ ] 5.1 `openspec validate add-advanced-progress-forecast --strict`
+- [ ] 5.2 `openspec archive add-advanced-progress-forecast --yes`

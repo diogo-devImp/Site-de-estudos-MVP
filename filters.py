@@ -4,8 +4,9 @@ Funções puras sobre listas de dicts. Entrada inválida levanta FiltroInvalido,
 que o endpoint converte em HTTP 422.
 """
 from datetime import date, datetime
-from typing import Optional
+from typing import Any, Optional
 
+from metrics import esta_concluida
 from utils import normalizar_texto, parse_data
 
 STATUS_VALIDOS = {"pendente": "Pendente", "concluida": "Concluída"}
@@ -96,3 +97,64 @@ def filtrar_disciplinas(disciplinas: list, q: Optional[str] = None,
                 continue
         resultado.append(d)
     return resultado
+
+
+def tarefas_atrasadas(tarefas: list, hoje: Optional[date] = None) -> list:
+    """Tarefas pendentes cuja `dataPrevista` já passou (hoje não conta como atrasada)."""
+    hoje = hoje or date.today()
+    atrasadas = []
+    for t in tarefas:
+        if esta_concluida(t):
+            continue
+        prevista = parse_data(t.get("dataPrevista"))
+        if prevista and prevista < hoje:
+            atrasadas.append(t)
+    return atrasadas
+
+
+def _relevancia_nome(termo: str, nome: Any) -> int:
+    """3 = nome igual ao termo, 2 = começa com o termo, 1 = contém o termo, 0 = não casa."""
+    alvo = normalizar_texto(nome)
+    if not termo or termo not in alvo:
+        return 0
+    if alvo == termo:
+        return 3
+    return 2 if alvo.startswith(termo) else 1
+
+
+def buscar_disciplinas(disciplinas: list, tarefas: list, q: Optional[str] = None,
+                       atrasadas: bool = False, hoje: Optional[date] = None) -> list:
+    """Busca híbrida (OpenSpec: add-hybrid-subject-search).
+
+    Uma disciplina entra no resultado se casar com o NOME (`q`, sem acento/caixa)
+    OU (quando `atrasadas=True`) se tiver ao menos uma tarefa pendente atrasada.
+    Sem `q` e sem `atrasadas`, devolve todas. Cada item ganha:
+      - `tarefas_atrasadas`: quantidade de tarefas pendentes atrasadas;
+      - `motivos`: lista com "nome" e/ou "atrasadas" (por que entrou);
+      - `relevancia`: 0-3 (qualidade do casamento por nome).
+    Ordenação: maior relevância, depois mais tarefas atrasadas, depois nome.
+    """
+    hoje = hoje or date.today()
+    termo = normalizar_texto(q)
+    filtrando = bool(termo) or atrasadas
+
+    resultado = []
+    for d in disciplinas:
+        da_disciplina = [t for t in tarefas if t.get("disciplinaId") == d.get("id")]
+        qtd_atrasadas = len(tarefas_atrasadas(da_disciplina, hoje))
+        relevancia = _relevancia_nome(termo, d.get("nome"))
+
+        motivos = []
+        if relevancia > 0:
+            motivos.append("nome")
+        if atrasadas and qtd_atrasadas > 0:
+            motivos.append("atrasadas")
+        if filtrando and not motivos:
+            continue
+        resultado.append({**d, "tarefas_atrasadas": qtd_atrasadas,
+                          "motivos": motivos, "relevancia": relevancia})
+
+    resultado.sort(key=lambda r: (-r["relevancia"], -r["tarefas_atrasadas"],
+                                  normalizar_texto(r.get("nome"))))
+    return resultado
+

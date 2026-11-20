@@ -28,3 +28,16 @@ def parse_data(valor: Any) -> Optional[date]:
         return datetime.strptime(str(valor).strip()[:10], "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+CAMPOS_DISCIPLINA = ("nome", "professor", "semestre", "cor", "cargaHoraria",
+                     "descricao", "dataInicio", "dataFim")
+CAMPOS_TAREFA = ("titulo", "disciplinaId", "dataPrevista", "descricao", "status")
+
+
+def extrair_campos_permitidos(dados: Any, permitidos: tuple) -> dict:
+    """Mantém só os campos editáveis (PATCH). Ignora `id`, `ra_aluno`, `dataConclusao` etc."""
+    if not isinstance(dados, dict):
+        return {}
+    return {campo: dados[campo] for campo in permitidos if campo in dados}
+

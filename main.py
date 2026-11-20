@@ -3,12 +3,15 @@ import os
 import shutil
 from database import db
 from fastapi import FastAPI, HTTPException, File, Form, UploadFile, Depends
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models import Aviso, AulaHoje, Disciplina, FrequenciaAluno, Tarefa
-from filters import FiltroInvalido, filtrar_disciplinas, filtrar_tarefas
+from filters import FiltroInvalido, buscar_disciplinas, filtrar_disciplinas, filtrar_tarefas
 from metrics import aplicar_data_conclusao, calcular_metricas
+from reports import gerar_relatorio_pdf, nome_arquivo_relatorio, nome_arquivo_valido
+from utils import CAMPOS_DISCIPLINA, CAMPOS_TAREFA, extrair_campos_permitidos
 from pydantic import BaseModel
 from typing import Optional
 import firebase_admin
@@ -274,6 +277,16 @@ def redefinir_senha(payload: RedefinirSenhaPayload):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def carregar_disciplinas_e_tarefas(ra_aluno: str):
+  """Lê do Firestore as disciplinas e tarefas do RA (sempre filtrando por ra_aluno)."""
+  disc_docs = db.collection("disciplinas").where("ra_aluno", "==", ra_aluno).stream()
+  tarefa_docs = db.collection("tarefas").where("ra_aluno", "==", ra_aluno).stream()
+  return (
+      [{"id": doc.id, **doc.to_dict()} for doc in disc_docs],
+      [{"id": doc.id, **doc.to_dict()} for doc in tarefa_docs],
+  )
+
+
 # --- ROTAS DE DISCIPLINAS ---
 @app.post("/disciplinas/", status_code=201)
 def post_disciplina(d: dict, usuario: dict = Depends(verificar_token)):
@@ -303,6 +316,23 @@ def get_disciplinas_aluno(
   except FiltroInvalido as e:
     raise HTTPException(status_code=422, detail=str(e))
 
+
+@app.get("/disciplinas/{ra_aluno}/busca")
+def busca_hibrida_disciplinas(
+    ra_aluno: str,
+    q: Optional[str] = None,
+    atrasadas: bool = False,
+    usuario: dict = Depends(verificar_token),
+):
+  """Busca híbrida: disciplinas cujo NOME casa com `q` OU que têm tarefas atrasadas
+  (`atrasadas=true`). A regra vive em filters.buscar_disciplinas (Python puro)."""
+  exigir_mesmo_usuario(ra_aluno, usuario)
+  try:
+    disciplinas, tarefas = carregar_disciplinas_e_tarefas(ra_aluno)
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  return buscar_disciplinas(disciplinas, tarefas, q=q, atrasadas=atrasadas)
+
 @app.put("/disciplinas/{id}")
 def update_disciplina(id: str, d: dict, usuario: dict = Depends(verificar_token)):
   try:
@@ -315,6 +345,29 @@ def update_disciplina(id: str, d: dict, usuario: dict = Depends(verificar_token)
     d["ra_aluno"] = usuario["ra"]
     doc_ref.set(d, merge=True)
     return {"id": id, **d}
+  except HTTPException:
+    raise
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/disciplinas/{id}")
+def patch_disciplina(id: str, d: dict, usuario: dict = Depends(verificar_token)):
+  """Atualização parcial: só os campos enviados (e permitidos) são alterados."""
+  try:
+    doc_ref = db.collection("disciplinas").document(id)
+    snap = doc_ref.get()
+    if not snap.exists:
+      raise HTTPException(status_code=404, detail="Disciplina não encontrada")
+    if str(snap.to_dict().get("ra_aluno")) != str(usuario.get("ra")):
+      raise HTTPException(status_code=403, detail="Acesso negado para esta disciplina.")
+    campos = extrair_campos_permitidos(d, CAMPOS_DISCIPLINA)
+    if not campos:
+      raise HTTPException(status_code=422, detail="Nenhum campo editável informado.")
+    doc_ref.set(campos, merge=True)
+    return {"id": id, **snap.to_dict(), **campos}
+  except HTTPException:
+    raise
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
 
@@ -376,6 +429,30 @@ def update_tarefa(id: str, t: Tarefa, usuario: dict = Depends(verificar_token)):
     dados = t.model_dump()
     dados["ra_aluno"] = usuario["ra"]
     dados = aplicar_data_conclusao(dados, anterior)
+    doc_ref.set(dados, merge=True)
+    return {"id": id, **dados}
+  except HTTPException:
+    raise
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/tarefas/{id}")
+def patch_tarefa(id: str, t: dict, usuario: dict = Depends(verificar_token)):
+  """Atualização parcial (ex.: só `status`). `dataConclusao` continua sendo definida pelo servidor."""
+  try:
+    doc_ref = db.collection("tarefas").document(id)
+    snap = doc_ref.get()
+    if not snap.exists:
+      raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    anterior = snap.to_dict()
+    if str(anterior.get("ra_aluno")) != str(usuario.get("ra")):
+      raise HTTPException(status_code=403, detail="Acesso negado para esta tarefa.")
+    campos = extrair_campos_permitidos(t, CAMPOS_TAREFA)
+    if not campos:
+      raise HTTPException(status_code=422, detail="Nenhum campo editável informado.")
+    dados = aplicar_data_conclusao({**anterior, **campos}, anterior)
+    dados["ra_aluno"] = usuario["ra"]
     doc_ref.set(dados, merge=True)
     return {"id": id, **dados}
   except HTTPException:
@@ -585,18 +662,57 @@ def get_metricas(ra_aluno: str, usuario: dict = Depends(verificar_token)):
     """Progresso ponderado por carga horária, previsão de conclusão e alertas."""
     exigir_mesmo_usuario(ra_aluno, usuario)
     try:
-        disc_docs = db.collection("disciplinas").where("ra_aluno", "==", ra_aluno).stream()
-        disciplinas = [{"id": doc.id, **doc.to_dict()} for doc in disc_docs]
-
-        tarefa_docs = db.collection("tarefas").where("ra_aluno", "==", ra_aluno).stream()
-        tarefas = [{"id": doc.id, **doc.to_dict()} for doc in tarefa_docs]
-
+        disciplinas, tarefas = carregar_disciplinas_e_tarefas(ra_aluno)
         return calcular_metricas(ra_aluno, disciplinas, tarefas)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# --- RELATÓRIO DE PROGRESSO EM PDF ---
+# O PDF é montado em reports.py (reportlab). Fica em reports/ (fora do Git, sem pasta pública):
+# o download passa por rota autenticada, então um aluno nunca baixa o relatório de outro.
+REPORTS_DIR = "reports"
+
+
+@app.post("/relatorios/{ra_aluno}/gerar", status_code=201)
+def gerar_relatorio(ra_aluno: str, usuario: dict = Depends(verificar_token)):
+    """Gera o PDF de progresso e devolve o link (autenticado) para baixá-lo."""
+    exigir_mesmo_usuario(ra_aluno, usuario)
+    try:
+        disciplinas, tarefas = carregar_disciplinas_e_tarefas(ra_aluno)
+        metricas = calcular_metricas(ra_aluno, disciplinas, tarefas)
+
+        aluno = {"ra": ra_aluno}
+        for doc in db.collection("usuarios").where("ra", "==", ra_aluno).stream():
+            dados = doc.to_dict()
+            aluno = {k: dados.get(k) for k in ("nome", "sobrenome", "ra", "curso", "semestre")}
+            break  # nunca copiamos a senha
+
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        arquivo = nome_arquivo_relatorio(ra_aluno)
+        gerar_relatorio_pdf(metricas, aluno, os.path.join(REPORTS_DIR, arquivo))
+        return {
+            "arquivo": arquivo,
+            "download_url": f"/relatorios/{ra_aluno}/download/{arquivo}",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar relatório: {str(e)}")
+
+
+@app.get("/relatorios/{ra_aluno}/download/{arquivo}")
+def baixar_relatorio(ra_aluno: str, arquivo: str, usuario: dict = Depends(verificar_token)):
+    exigir_mesmo_usuario(ra_aluno, usuario)
+    if not nome_arquivo_valido(ra_aluno, arquivo):
+        raise HTTPException(status_code=404, detail="Relatório não encontrado.")
+    caminho = os.path.join(REPORTS_DIR, arquivo)
+    if not os.path.isfile(caminho):
+        raise HTTPException(status_code=404, detail="Relatório não encontrado.")
+    # filename= faz o FileResponse enviar Content-Disposition: attachment (força o download)
+    return FileResponse(caminho, media_type="application/pdf", filename=arquivo)
+
+
 os.makedirs("uploads", exist_ok=True)
+os.makedirs(REPORTS_DIR, exist_ok=True)
 os.makedirs("img", exist_ok=True)
 os.makedirs("css", exist_ok=True)
 
