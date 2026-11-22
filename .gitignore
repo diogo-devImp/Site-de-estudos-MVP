@@ -2,3 +2,4 @@ servicekey.json
 uploads/
 __pycache__/
 reports/
+check_firestore.py
